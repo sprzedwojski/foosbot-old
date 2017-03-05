@@ -36,7 +36,10 @@ public class GameService {
     @Autowired
     private GamesCache gamesCache;
 
-    public void createGame(final @NotBlank(message = "Username cannot be empty!") String userName, final @NotBlank(message = "User ID cannot be empty!") String userId, final @NotBlank(message = "Response URL cannot be empty!") String messageUrl, final @TwentyFourHourFormat String proposedTimeInHours) {
+    public void createGame(final @NotBlank(message = "Username cannot be empty!") String userName,
+                           final @NotBlank(message = "User ID cannot be empty!") String userId,
+                           final @NotBlank(message = "Response URL cannot be empty!") String messageUrl,
+                           final @TwentyFourHourFormat String proposedTimeInHours) {
         final Game game = gamesCache.findByHostName(userName);
 
         if (game == null) {
@@ -228,11 +231,18 @@ public class GameService {
 
             statusReplyMessage = stringBuffer.toString();
         }
-
+        logger.info(statusReplyMessage);
         final PrivateReply statusReply = new PrivateReply(statusReplyMessage);
         slackService.postPrivateReplyToMessage(responseUrl, statusReply);
 
         logger.info("The user was presented with current status.");
+    }
+
+    public void reply(final @NotBlank(message = "Response URL cannot be empty!") String responseUrl,
+                      String statusReplyMessage) {
+        logger.info(statusReplyMessage);
+        final PrivateReply statusReply = new PrivateReply(statusReplyMessage);
+        slackService.postPrivateReplyToMessage(responseUrl, statusReply);
     }
 
     private Date getProposedTimeAsDate(final String proposedTime) {

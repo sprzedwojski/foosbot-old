@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController("game")
 public class GameController {
@@ -24,19 +26,53 @@ public class GameController {
     @Autowired
     private SlackProperties slackProperties;
 
+//    @RequestMapping(method = RequestMethod.POST, consumes = "application/x-www-form-urlencoded;charset=UTF-8")
+//    public void createGame(@RequestParam(value = "response_url") String responseUrl,
+//                           @RequestParam(value = "token") String token,
+//                           @RequestParam(value = "user_name") String userName,
+//                           @RequestParam(value = "user_id") String userId,
+//                           @RequestParam(value = "text") String proposedTime) {
+//        if (slackProperties.getNewCommandToken().equals(token)) {
+//            gameService.createGame(userName, userId, responseUrl, proposedTime);
+//        } else {
+//            logger.warn("Cannot create a new game - invalid token!");
+//        }
+//    }
+
     @RequestMapping(method = RequestMethod.POST, consumes = "application/x-www-form-urlencoded;charset=UTF-8")
-    public void createGame(@RequestParam(value = "response_url") String responseUrl, @RequestParam(value = "token") String token, @RequestParam(value = "user_name") String userName, @RequestParam(value = "user_id") String userId, @RequestParam(value = "text") String proposedTime) {
+    public void doAction(@RequestParam(value = "response_url") String responseUrl,
+                           @RequestParam(value = "token") String token,
+                           @RequestParam(value = "user_name") String userName,
+                           @RequestParam(value = "user_id") String userId,
+                           @RequestParam(value = "text") String text) {
+
+        String action = "", args = "";
+        if(text != null) {
+            String[] arr = text.split(" ");
+            action = arr[0];
+            logger.info("action: " + action);
+            args = Arrays.stream(arr).skip(1).reduce("", (a, b) -> a + " " + b);
+            logger.info("args  : " + args);
+        }
+
         if (slackProperties.getNewCommandToken().equals(token)) {
-            gameService.createGame(userName, userId, responseUrl, proposedTime);
+//            gameService.createGame(userName, userId, responseUrl, text);
+            gameService.reply(responseUrl, "action: " + action + " | args: " + args);
         } else {
             logger.warn("Cannot create a new game - invalid token!");
         }
     }
 
-    @RequestMapping(path = "join", method = RequestMethod.POST, consumes = "application/x-www-form-urlencoded;charset=UTF-8")
-    public void joinGame(@RequestParam(value = "response_url") String responseUrl, @RequestParam(value = "token") String token, @RequestParam(value = "user_name") String userName, @RequestParam(value = "user_id") String userId, @RequestParam(value = "text", required = false) String hostName) {
+    @RequestMapping(path = "join", method = RequestMethod.POST,
+            consumes = "application/x-www-form-urlencoded; charset=UTF-8")
+    public void joinGame(@RequestParam(value = "response_url") String responseUrl,
+                         @RequestParam(value = "token") String token,
+                         @RequestParam(value = "user_name") String userName,
+                         @RequestParam(value = "user_id") String userId,
+                         @RequestParam(value = "text", required = false) String hostName) {
         if (slackProperties.getIaminCommandToken().equals(token)) {
-            final Optional<String> hostNameOptional = StringUtils.hasText(hostName) ? Optional.of(hostName) : Optional.empty();
+            final Optional<String> hostNameOptional = StringUtils.hasText(hostName) ? Optional.of(hostName) :
+                    Optional.empty();
 
             gameService.joinGame(userName, userId, hostNameOptional, responseUrl);
         } else {
@@ -44,8 +80,12 @@ public class GameController {
         }
     }
 
-    @RequestMapping(path = "update", method = RequestMethod.POST, consumes = "application/x-www-form-urlencoded;charset=UTF-8")
-    public void updateGame(@RequestParam(value = "response_url") String responseUrl, @RequestParam(value = "token") String token, @RequestParam(value = "user_name") String userName, @RequestParam(value = "text") String proposedTime) {
+    @RequestMapping(path = "update", method = RequestMethod.POST, consumes = "application/x-www-form-urlencoded;" +
+            "charset=UTF-8")
+    public void updateGame(@RequestParam(value = "response_url") String responseUrl,
+                           @RequestParam(value = "token") String token,
+                           @RequestParam(value = "user_name") String userName,
+                           @RequestParam(value = "text") String proposedTime) {
         if (slackProperties.getUpdateCommandToken().equals(token)) {
             gameService.updateGame(userName, responseUrl, proposedTime);
         } else {
@@ -53,8 +93,11 @@ public class GameController {
         }
     }
 
-    @RequestMapping(path = "cancel", method = RequestMethod.POST, consumes = "application/x-www-form-urlencoded;charset=UTF-8")
-    public void cancelGame(@RequestParam(value = "response_url") String responseUrl, @RequestParam(value = "token") String token, @RequestParam(value = "user_name") String userName) {
+    @RequestMapping(path = "cancel", method = RequestMethod.POST, consumes = "application/x-www-form-urlencoded;" +
+            "charset=UTF-8")
+    public void cancelGame(@RequestParam(value = "response_url") String responseUrl,
+                           @RequestParam(value = "token") String token,
+                           @RequestParam(value = "user_name") String userName) {
         if (slackProperties.getCancelCommandToken().equals(token)) {
             gameService.cancelGame(userName, responseUrl);
         } else {
@@ -63,7 +106,8 @@ public class GameController {
     }
 
     @RequestMapping(method = RequestMethod.GET)
-    public void getStatus(@RequestParam(value = "response_url") String responseUrl, @RequestParam(value = "token") String token) {
+    public void getStatus(@RequestParam(value = "response_url") String responseUrl,
+                          @RequestParam(value = "token") String token) {
         if (slackProperties.getStatusCommandToken().equals(token)) {
             gameService.getStatus(responseUrl);
         } else {

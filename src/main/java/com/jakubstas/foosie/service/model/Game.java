@@ -47,6 +47,7 @@ public class Game {
         return host;
     }
 
+    // TODO If game is of type "now", after adding new player check if you can kick off the game
     public void join(final User player) {
         players.add(player);
     }
